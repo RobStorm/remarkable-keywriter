@@ -12,6 +12,7 @@ Window {
     property string doc: "# reMarkable key-writer";
     property int mode: 0;
     property bool ctrlPressed: false;
+    property bool leftPressed: false;
     property bool isOmni: false;
     property string omniQuery: "";
     property string currentFile: "scratch.md";
@@ -81,13 +82,48 @@ Window {
         if (event.key == Qt.Key_Control) {
             ctrlPressed = true;
         } else if (event.key == Qt.Key_K && ctrlPressed) {
-            isOmni = !isOmni;
-            event.accepted = true;
+            
+            if(mode == 1)
+            {
+                toggleMode();
+            }
+            else
+            {
+                isOmni = !isOmni;
+            
+                omniQuery = "";
+                event.accepted = true;
+            }
+
         }
+
+        if (event.key == Qt.Key_Home) {  
+            if(mode == 0 && !isOmni) {
+                if(!leftPressed)
+                {
+                    isOmni = true;
+                }
+                else
+                {
+                    Qt.quit();
+                }
+            }
+            
+            if(mode == 1) {
+                toggleMode();
+            }
+        }
+
+        if (event.key == Qt.Key_Left) {
+            leftPressed = true;
+        }        
     }
     function handleKeyUp(event) {
         if (event.key == Qt.Key_Control) {
             ctrlPressed = false;
+        }
+        else if (event.key == Qt.Key_Left) {
+            leftPressed = false;
         }
     }
 
@@ -99,10 +135,6 @@ Window {
 
                 toggleMode();
             }
-        }
-
-        if (mode == 0 && event.key == Qt.Key_Home) {
-            isOmni = !isOmni;
         }
     }
 
@@ -157,11 +189,11 @@ Window {
                 focus: !isOmni;
                 Component {
                     id: curDelegate
-                    Rectangle { width:8; height: 20; visible: query.cursorVisible; color: "black";}
+                    Rectangle { width:2; height: 12; visible: query.cursorVisible; color: "black";}
                 }
                 cursorDelegate: curDelegate;
                 readOnly: mode == 0 ? true : false;
-                font.pointSize: mode == 0 ? 12 : 18;
+                font.pointSize: mode == 0 ? 12 : 12;
 
                 onLinkActivated: {
                     console.log("Link activated: " + link);
@@ -196,7 +228,7 @@ Window {
         rotation: 90
         anchors.centerIn: parent;
         width: 700;
-        height: 400;
+        height: 1000;
         color: "black"
         visible: isOmni ? true : false;
         radius: 20;
@@ -210,13 +242,14 @@ Window {
             x: 40;
             width:680;
             color: "white";
-            font.pointSize: 24;
+            font.pointSize: 18;
             font.family: "Noto Mono";
             focus: isOmni;
             Keys.enabled: true;
             Keys.onPressed: {
-                if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
-                    saveFile();
+
+                if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return || event.key == Qt.Key_Home) {
+
                     if (!omniList.currentItem) {
                         initFile(omniQuery);
                         doLoad(omniQuery + ".md");
@@ -224,6 +257,18 @@ Window {
                         doLoad(omniList.currentItem.text);
                     }
                     isOmni = false;
+                    event.accepted = true;
+                    return;
+                }
+
+                if(event.key === Qt.Key_Left){
+                    omniList.currentIndex += 1;
+                    event.accepted = true;
+                    return;
+                }
+
+                if(event.key === Qt.Key_Right){
+                    omniList.currentIndex -= 1;
                     event.accepted = true;
                     return;
                 }
